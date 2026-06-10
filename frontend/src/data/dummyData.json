@@ -1,0 +1,92 @@
+{
+  "teacher": {
+    "id": "T001",
+    "name": "Dr. Priya Sharma",
+    "email": "priya.sharma@swais.edu",
+    "password": "password123",
+    "avatar": "PS",
+    "subject": "Social Studies",
+    "class": "8",
+    "section": "A",
+    "totalStudents": 200,
+    "school": "SWAIS International Academy"
+  },
+  "notes": [
+    {
+      "id": "N001",
+      "title": "The Indian Constitution — An Introduction",
+      "content": "The Indian Constitution is the supreme law of India. It was adopted on 26 November 1949 and came into effect on 26 January 1950. The Constitution establishes the framework for the governance of India, defining the powers and responsibilities of the government and the rights and duties of its citizens.\n\nKey topics covered:\n• The Preamble and its significance\n• Fundamental Rights (Articles 12–35)\n• Directive Principles of State Policy\n• Fundamental Duties\n• The amendment process",
+      "chapter": "Chapter 1 - The Indian Constitution",
+      "tags": ["constitution", "fundamental rights", "preamble"],
+      "contentType": "typed",
+      "canvasImageUrl": null,
+      "createdAt": "2026-04-10T09:00:00Z",
+      "updatedAt": "2026-04-10T09:00:00Z"
+    },
+    {
+      "id": "N002",
+      "title": "Understanding Secularism",
+      "content": "Secularism in India means that the state treats all religions equally and does not promote any particular religion. The Indian Constitution ensures freedom of religion to all citizens while maintaining a clear separation between religion and government.\n\nImportant concepts:\n• What is secularism?\n• Indian secularism vs Western secularism\n• Constitutional provisions for secularism\n• Challenges to secularism in India\n• Case studies and real-world examples",
+      "chapter": "Chapter 2 - Understanding Secularism",
+      "tags": ["secularism", "religion", "governance"],
+      "contentType": "typed",
+      "canvasImageUrl": null,
+      "createdAt": "2026-04-12T10:30:00Z",
+      "updatedAt": "2026-04-14T08:15:00Z"
+    },
+    {
+      "id": "N003",
+      "title": "Parliament and the Making of Laws",
+      "content": "Parliament is the supreme legislative body of India. It consists of the President of India and two Houses — the Rajya Sabha (Council of States) and the Lok Sabha (House of the People).\n\nTopics covered:\n• Structure of Parliament\n• Lok Sabha and Rajya Sabha composition\n• The law-making process — from bill to act\n• Types of bills: Ordinary, Money, and Constitutional Amendment\n• Role of standing committees",
+      "chapter": "Chapter 3 - Parliament and Laws",
+      "tags": ["parliament", "lok sabha", "legislation"],
+      "contentType": "typed",
+      "canvasImageUrl": null,
+      "createdAt": "2026-04-15T11:00:00Z",
+      "updatedAt": "2026-04-15T11:00:00Z"
+    },
+    {
+      "id": "N004",
+      "title": "Judiciary — The Guardian of the Constitution",
+      "content": "The Indian Judiciary is an independent body that acts as the guardian of the Constitution. It ensures that the laws passed by the legislature and the actions of the executive are in accordance with the provisions of the Constitution.\n\nStudy points:\n• Structure of the Indian judiciary\n• Supreme Court, High Courts, and District Courts\n• Judicial review and its importance\n• Public Interest Litigation (PIL)\n• Landmark judgments in Indian history",
+      "chapter": "Chapter 4 - Judiciary",
+      "tags": ["judiciary", "supreme court", "judicial review"],
+      "contentType": "typed",
+      "canvasImageUrl": null,
+      "createdAt": "2026-04-17T14:00:00Z",
+      "updatedAt": "2026-04-18T09:30:00Z"
+    },
+    {
+      "id": "N005",
+      "title": "Understanding Marginalisation",
+      "content": "Marginalisation refers to the process by which certain groups are pushed to the margins of society due to their identity, social status, or economic condition. These groups face discrimination and are denied access to equal opportunities.\n\nKey concepts:\n• What is marginalisation?\n• Adivasi communities and their challenges\n• Minority communities\n• Government initiatives for marginalised groups\n• Role of education in overcoming marginalisation",
+      "chapter": "Chapter 5 - Understanding Marginalisation",
+      "tags": ["marginalisation", "social justice", "adivasi"],
+      "contentType": "typed",
+      "canvasImageUrl": null,
+      "createdAt": "2026-04-19T10:00:00Z",
+      "updatedAt": "2026-04-19T10:00:00Z"
+    },
+    {
+      "id": "N006",
+      "title": "Confronting Marginalisation",
+      "content": "This chapter explores how marginalised communities confront and challenge their exclusion from mainstream society. It examines the constitutional safeguards and social movements that have empowered these communities.\n\nTopics:\n• Constitutional safeguards — reservations, anti-discrimination laws\n• Laws protecting the rights of Dalits and Adivasis\n• Social movements and activism\n• Role of NGOs and civil society\n• Success stories of empowerment",
+      "chapter": "Chapter 6 - Confronting Marginalisation",
+      "tags": ["rights", "empowerment", "activism"],
+      "contentType": "typed",
+      "canvasImageUrl": null,
+      "createdAt": "2026-04-20T15:30:00Z",
+      "updatedAt": "2026-04-21T11:45:00Z"
+    }
+  ],
+  "chapters": [
+    "Chapter 1 - The Indian Constitution",
+    "Chapter 2 - Understanding Secularism",
+    "Chapter 3 - Parliament and Laws",
+    "Chapter 4 - Judiciary",
+    "Chapter 5 - Understanding Marginalisation",
+    "Chapter 6 - Confronting Marginalisation",
+    "Chapter 7 - Public Facilities",
+    "Chapter 8 - Law and Social Justice"
+  ]
+}

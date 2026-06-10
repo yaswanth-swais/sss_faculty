@@ -1,0 +1,39 @@
+name: Deploy sss.swais.in
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            echo ">>> Pull latest code..."
+            cd /home/ubuntu/sss-frontend
+            git pull origin main
+
+            echo ">>> Setup Node..."
+            export NVM_DIR="$HOME/.nvm"
+            source $NVM_DIR/nvm.sh
+            nvm use 20
+
+            echo ">>> Install & build..."
+            npm install
+            npm run build
+
+            echo ">>> Restart app..."
+            pm2 restart sss-frontend
+            pm2 save
+
+            echo "Deploy complete!"
