@@ -1,0 +1,35 @@
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/build/
+
+# Backend
+backend/venv/
+backend/__pycache__/
+**/__pycache__/
+
+# Python
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Env files
+.env
+.env.local
+
+# VSCode
+.vscode/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# DB files (optional)
+*.sqlite3
+*.db
