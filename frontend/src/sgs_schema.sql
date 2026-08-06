@@ -1,5 +1,5 @@
 -- =============================================================================
---  SSS (Swais Graduate School) — Production Database Schema
+--  SGS (Swais Graduate School) — Production Database Schema
 --  Version      : 1.0.0  |  Date: 2026-05-19
 --
 --  Database    : PostgreSQL 15+
@@ -32,7 +32,7 @@ CREATE TYPE notification_channel AS ENUM ('sms', 'whatsapp', 'email', 'manual');
 
 -- =============================================================================
 --  TABLE: schools
---  One row per school managed under the SSS platform.
+--  One row per school managed under the SGS platform.
 -- =============================================================================
 CREATE TABLE schools (
     school_id       SERIAL          PRIMARY KEY,

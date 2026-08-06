@@ -1,12 +1,46 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useNotes } from "@/context/NotesContext";
 import Link from "next/link";
 
+const API = process.env.NEXT_PUBLIC_API_BASE_URL;
+const TODAY = new Date();
+
+function getDueDays(dueDateStr) {
+  const due = new Date(dueDateStr);
+  const diff = Math.round((due - TODAY) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
+function DueLabel({ days }) {
+  if (days < 0)  return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#FEF2F2", color: "#EF4444" }}>Overdue</span>;
+  if (days === 0) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#FFF7ED", color: "#EA580C" }}>Due Today</span>;
+  if (days === 1) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#FFFBEB", color: "#D97706" }}>Due Tomorrow</span>;
+  return <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "#F1F5F9", color: "#64748B" }}>In {days} days</span>;
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { notes, totalNotes, isLoading } = useNotes();
+  const [assignments, setAssignments] = useState([]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("swais_faculty_token");
+    if (!token) return;
+    fetch(`${API}/api/v1/assignments`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => setAssignments((d.assignments || []).map(a => ({
+        id: a.assignment_id,
+        title: a.title,
+        subject: a.subject,
+        dueDate: a.due_date,
+        submittedCount: a.submitted_count,
+        totalStudents: a.total_students,
+      }))))
+      .catch(() => setAssignments([]));
+  }, []);
 
   const coveredChapters = [...new Set(notes.map((n) => n.chapter))].length;
   const recentNotes = notes.slice(0, 3);
@@ -31,7 +65,7 @@ export default function DashboardPage() {
     },
     {
       label: "Students",
-      value: user?.totalStudents || 200,
+      value: user?.totalStudents ?? "—",
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
@@ -141,12 +175,15 @@ export default function DashboardPage() {
           </div>
           <p className="text-white/80 text-sm mb-1">Welcome back,</p>
           <h1 className="text-2xl sm:text-3xl font-bold mb-2" style={{ fontFamily: "var(--font-space-grotesk)" }}>
-            {user?.name || "Teacher"} 👋
+            {user?.name || ""} 👋
           </h1>
           <p className="text-white/80 text-sm max-w-lg">
-            Managing Class {user?.class || "8"}{user?.section ? `-${user.section}` : ""} · {user?.subject || "Social Studies"} &nbsp;·&nbsp;
-            <span className="font-semibold text-white">{totalNotes} notes</span> &nbsp;&amp;&nbsp;
-            <span className="font-semibold text-white">{user?.totalStudents || 200} students</span>
+            {user?.class ? `Managing Class ${user.class}${user?.section ? `-${user.section}` : ""}` : ""}
+            {user?.subject ? ` · ${user.subject}` : ""} &nbsp;·&nbsp;
+            <span className="font-semibold text-white">{totalNotes} notes</span>
+            {user?.totalStudents != null && (
+              <>&nbsp;&amp;&nbsp;<span className="font-semibold text-white">{user.totalStudents} students</span></>
+            )}
           </p>
         </div>
       </div>
@@ -268,6 +305,114 @@ export default function DashboardPage() {
                 </svg>
               </Link>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Assignment Alerts ──────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Due Date Alerts */}
+        <div className="bg-white rounded-2xl p-6" style={{ border: "1px solid rgba(234,88,12,0.15)" }}>
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+              style={{ background: "linear-gradient(135deg,#F59E0B,#EA580C)" }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold" style={{ color: "#0F172A", fontFamily: "var(--font-space-grotesk)" }}>
+                Due Date Alerts
+              </h2>
+              <p className="text-xs" style={{ color: "#94A3B8" }}>Upcoming assignment deadlines</p>
+            </div>
+            {assignments.filter(a => getDueDays(a.dueDate) <= 1).length > 0 && (
+              <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full animate-pulse"
+                style={{ background: "#FEF2F2", color: "#EF4444" }}>
+                {assignments.filter(a => getDueDays(a.dueDate) <= 1).length} urgent
+              </span>
+            )}
+          </div>
+          <div className="space-y-2.5">
+            {assignments.length === 0 && (
+              <p className="text-sm text-center py-6" style={{ color: "#94A3B8" }}>No upcoming assignments.</p>
+            )}
+            {[...assignments].sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).map(a => {
+              const days = getDueDays(a.dueDate);
+              const isUrgent = days <= 1;
+              return (
+                <div key={a.id}
+                  className="flex items-center justify-between gap-3 p-3.5 rounded-xl"
+                  style={{
+                    border: `1px solid ${isUrgent ? "rgba(239,68,68,0.2)" : "#E2E8F0"}`,
+                    background: isUrgent ? "#FEF2F210" : "transparent",
+                  }}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate" style={{ color: "#0F172A" }}>{a.title}</p>
+                    <p className="text-xs mt-0.5" style={{ color: "#94A3B8" }}>{a.subject} · {new Date(a.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</p>
+                  </div>
+                  <DueLabel days={days} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Completion Alerts */}
+        <div className="bg-white rounded-2xl p-6" style={{ border: "1px solid rgba(99,102,241,0.15)" }}>
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white"
+              style={{ background: "linear-gradient(135deg,#6366F1,#10B981)" }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-base font-bold" style={{ color: "#0F172A", fontFamily: "var(--font-space-grotesk)" }}>
+                Completion Alerts
+              </h2>
+              <p className="text-xs" style={{ color: "#94A3B8" }}>Assignment submission status</p>
+            </div>
+            {assignments.filter(a => a.submittedCount < a.totalStudents).length > 0 && (
+              <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full"
+                style={{ background: "#EEF2FF", color: "#6366F1" }}>
+                {assignments.filter(a => a.submittedCount < a.totalStudents).length} pending
+              </span>
+            )}
+          </div>
+          <div className="space-y-2.5">
+            {assignments.length === 0 && (
+              <p className="text-sm text-center py-6" style={{ color: "#94A3B8" }}>No submission data yet.</p>
+            )}
+            {assignments.map(a => {
+              const pct = Math.round((a.submittedCount / a.totalStudents) * 100);
+              const allDone = a.submittedCount === a.totalStudents;
+              const pendingCount = a.totalStudents - a.submittedCount;
+              return (
+                <div key={a.id} className="p-3.5 rounded-xl" style={{ border: "1px solid #E2E8F0" }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm font-semibold truncate" style={{ color: "#0F172A" }}>{a.title}</p>
+                    {allDone ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2"
+                        style={{ background: "#ECFDF5", color: "#10B981" }}>All Submitted ✓</span>
+                    ) : (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ml-2"
+                        style={{ background: "#FFF7ED", color: "#D97706" }}>{pendingCount} pending</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: "#EEF2FF" }}>
+                      <div className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${pct}%`, background: allDone ? "#10B981" : "linear-gradient(90deg,#6366F1,#8B5CF6)" }} />
+                    </div>
+                    <span className="text-xs font-bold shrink-0" style={{ color: allDone ? "#10B981" : "#6366F1" }}>
+                      {a.submittedCount}/{a.totalStudents}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

@@ -1,14 +1,29 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { FALLBACK_CHAPTERS, buildFallbackPlan } from "@/lib/staticData";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+
+const AI_API =
+  process.env.NEXT_PUBLIC_AI_API_BASE_URL;
 
 function getToken() {
   return typeof window !== "undefined" ? localStorage.getItem("swais_faculty_token") : null;
 }
+function getUserEmail() {
+  if (typeof window === "undefined") return "";
 
+  try {
+    const auth = JSON.parse(
+      localStorage.getItem("swais_faculty_auth") || "{}"
+    );
+
+    return auth.email || "";
+  } catch {
+    return "";
+  }
+}
 const SECTION_COLORS = [
   { bg: "#EEF2FF", border: "#C7D2FE", icon: "#6366F1", label: "#4F46E5" },
   { bg: "#F0FDF4", border: "#BBF7D0", icon: "#10B981", label: "#059669" },
@@ -146,7 +161,7 @@ function PlanDisplay({ plan, onSave, saving, saved }) {
               </h3>
             </div>
             <ul className="space-y-2">
-              {plan.objectives.map((obj, i) => (
+              {(plan.objectives || []).map((obj, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "#374151" }}>
                   <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0 mt-0.5"
                     style={{ background: "#6366F1" }}>{i + 1}</span>
@@ -165,7 +180,7 @@ function PlanDisplay({ plan, onSave, saving, saved }) {
               </h3>
             </div>
             <div className="flex flex-wrap gap-2">
-              {plan.materials.map((m, i) => (
+              {(plan.materials || []).map((m, i) => (
                 <span key={i} className="px-3 py-1 rounded-full text-xs font-medium"
                   style={{ background: "white", color: "#047857", border: "1px solid #BBF7D0" }}>
                   {m}
@@ -196,7 +211,7 @@ function PlanDisplay({ plan, onSave, saving, saved }) {
               </h3>
             </div>
             <div className="space-y-3">
-              {plan.plan_sections.map((sec, i) => {
+              {(plan.plan_sections || []).map((sec, i) => {
                 const c = SECTION_COLORS[i % SECTION_COLORS.length];
                 return (
                   <div key={i} className="rounded-xl p-4" style={{ background: c.bg, border: `1px solid ${c.border}` }}>
@@ -364,24 +379,26 @@ export default function LessonPlannerPage() {
   const [plan,        setPlan]        = useState(null);
   const [saving,      setSaving]      = useState(false);
   const [saved,       setSaved]       = useState(false);
+  const [editing,     setEditing]     = useState(false);  // back on the form but keep the last plan
+  const [genError,    setGenError]    = useState("");
   const [savedPlans,  setSavedPlans]  = useState([]);
   const [plansLoading,setPlansLoading]= useState(false);
   const rightRef = useRef(null);
 
   const headers = { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" };
 
-  // Load chapters on mount — fall back to static list if API is unreachable
+  // Load chapters on mount from the API (no mock fallback)
   useEffect(() => {
     fetch(`${API}/api/v1/chapters`, { headers })
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(d => {
-        const list = d.chapters?.length ? d.chapters : FALLBACK_CHAPTERS;
+        const list = d.chapters || [];
         setChapters(list);
-        setChapter(list[0] || "");
+        setChapter(list[0]?.chapter_id?.toString() || "");
       })
       .catch(() => {
-        setChapters(FALLBACK_CHAPTERS);
-        setChapter(FALLBACK_CHAPTERS[0]);
+        setChapters([]);
+        setChapter("");
       });
   }, []);
 
@@ -398,33 +415,195 @@ export default function LessonPlannerPage() {
 
   const handleGenerate = async () => {
     if (!chapter) return;
+
+    setEditing(false);
+    setGenError("");
     setGenerating(true);
     setPlan(null);
     setSaved(false);
+
     try {
-      const res = await fetch(`${API}/api/v1/lesson-plans/generate`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          chapter,
-          topic: topic.trim() || null,
-          duration_minutes: duration,
-          objectives: objectives.filter(o => o.trim()),
-          special_notes: notes.trim() || null,
-        }),
-      });
-      const data = await res.json();
-      setPlan(data);
-      setTimeout(() => rightRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    } catch {
-      // API unavailable — generate a local plan so the UI still works
-      const offlinePlan = buildFallbackPlan(
-        chapter,
-        topic.trim() || null,
-        duration,
+      const selectedChapter = chapters.find(
+        (item) =>
+          String(item.chapter_id) === String(chapter)
       );
-      setPlan(offlinePlan);
-      setTimeout(() => rightRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+
+      const chapterName =
+        topic.trim() ||
+        selectedChapter?.content_title ||
+        selectedChapter?.chapter_name ||
+        "Selected Chapter";
+
+      const userEmail =
+        getUserEmail() ||
+        "sandipani.acharya@swais.edu";
+
+      const response = await fetch(
+        `${AI_API}/api/faculty/generate-material`,
+        {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            topic: chapterName,
+            grade_level: "8",
+            user_email: userEmail,
+            client_name: "SSS",
+          }),
+        }
+      );
+
+      const responseText = await response.text();
+
+      let data;
+
+      try {
+        data = responseText
+          ? JSON.parse(responseText)
+          : {};
+      } catch {
+        data = responseText;
+      }
+
+      if (!response.ok) {
+        const detail =
+          typeof data?.detail === "string"
+            ? data.detail
+            : data?.detail
+              ? JSON.stringify(data.detail)
+              : typeof data === "string"
+                ? data
+                : `HTTP ${response.status}`;
+
+        throw new Error(detail);
+      }
+
+      const teachingMaterial =
+        data?.teaching_material || {};
+
+      const generatedMaterial =
+        teachingMaterial?.material ||
+        data?.material ||
+        "";
+
+      if (!generatedMaterial) {
+        throw new Error(
+          `Teaching material missing in response: ${JSON.stringify(data)}`
+        );
+      }
+
+      const customObjectives = objectives
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      const introDuration = Math.max(
+        5,
+        Math.floor(duration * 0.2)
+      );
+
+      const coreDuration = Math.max(
+        10,
+        Math.floor(duration * 0.55)
+      );
+
+      const assessmentDuration = Math.max(
+        5,
+        duration - introDuration - coreDuration
+      );
+
+      const generatedPlan = {
+        title:
+          teachingMaterial?.topic ||
+          `Lesson Plan: ${chapterName}`,
+
+        duration_minutes: duration,
+        class_name:
+          teachingMaterial?.grade_level || "8",
+        section: "A",
+        subject: "Social",
+        chapter_text:
+          selectedChapter?.content_title ||
+          selectedChapter?.chapter_name ||
+          chapterName,
+
+        objectives:
+          customObjectives.length > 0
+            ? customObjectives
+            : [
+                `Understand the key concepts of ${chapterName}`,
+                `Explain the topic using examples`,
+                `Participate in classroom discussion`,
+              ],
+
+        materials: [
+          "Textbook",
+          "Blackboard",
+          "Teaching notes",
+        ],
+
+        core_concept: generatedMaterial,
+
+        plan_sections: [
+          {
+            title: "Introduction",
+            duration: introDuration,
+            activity:
+              "Topic introduction and warm-up discussion",
+            teacher_action:
+              `Introduce ${chapterName} and connect it with previous knowledge.`,
+            student_action:
+              "Listen, recall prior knowledge and answer introductory questions.",
+          },
+          {
+            title: "Core Teaching",
+            duration: coreDuration,
+            activity:
+              "Concept explanation and classroom interaction",
+            teacher_action: generatedMaterial,
+            student_action:
+              "Take notes, participate in discussion and ask questions.",
+          },
+          {
+            title: "Assessment and Wrap-up",
+            duration: assessmentDuration,
+            activity:
+              "Recap, oral questions and conclusion",
+            teacher_action:
+              "Summarise the key points and ask review questions.",
+            student_action:
+              "Answer questions and explain the important concepts.",
+          },
+        ],
+
+        assessment_method:
+          "Oral questioning, classroom participation and a short written response.",
+
+        homework:
+          notes.trim() ||
+          `Complete the textbook exercises related to ${chapterName}.`,
+      };
+
+      setPlan(generatedPlan);
+
+      setTimeout(() => {
+        rightRef.current?.scrollIntoView({
+          behavior: "smooth",
+        });
+      }, 100);
+    } catch (error) {
+      console.error(
+        "LESSON PLAN GENERATION FAILED:",
+        error
+      );
+
+      setPlan(null);
+
+      setGenError(
+        error?.message ||
+        "Couldn't generate the lesson plan. Please try again."
+      );
     } finally {
       setGenerating(false);
     }
@@ -453,6 +632,9 @@ export default function LessonPlannerPage() {
     setSavedPlans(p => p.filter(x => x.lesson_plan_id !== id));
   };
 
+  // idea-3: return to the form but KEEP the last plan + inputs, so the user can jump back to the result
+  const backToEdit = () => setEditing(true);
+
   const addObjective   = () => setObjectives(o => [...o, ""]);
   const updateObjective = (i, v) => setObjectives(o => o.map((x, j) => j === i ? v : x));
   const removeObjective = (i) => setObjectives(o => o.filter((_, j) => j !== i));
@@ -470,7 +652,7 @@ export default function LessonPlannerPage() {
                   d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold" style={{ color: "#0F172A", fontFamily: "var(--font-space-grotesk)" }}>
+            <h1 className="text-2xl font-bold" style={{ color: "#ffffff", fontFamily: "var(--font-space-grotesk)" }}>
               Lesson Planner
             </h1>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold"
@@ -515,19 +697,59 @@ export default function LessonPlannerPage() {
             <SavedPlans
               plans={savedPlans}
               onDelete={handleDelete}
-              onLoad={p => { setPlan(p); setSaved(true); setTab("create"); }}
+              onLoad={p => { setPlan(p.plan || p); setSaved(true); setEditing(false); setTab("create"); }}
             />
           )}
         </div>
       )}
 
-      {/* ── Create Tab — two-column layout ─────────────────────────── */}
+      {/* ── Create Tab — two-step flow (idea-3) ──────────────────────── */}
       {tab === "create" && (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+        generating ? (
+          /* STEP 2a — full-width AI generating */
+          <div className="max-w-4xl mx-auto bg-white rounded-2xl overflow-hidden"
+            style={{ border: "1px solid rgba(99,102,241,0.1)" }}>
+            <GeneratingAnimation />
+          </div>
+        ) : plan && !editing ? (
+          /* STEP 2b — full-width result with a back-to-edit button */
+          <div className="max-w-4xl mx-auto space-y-4" ref={rightRef}>
+            <button onClick={backToEdit}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all"
+              style={{ background: "white", color: "#6366F1", border: "1px solid #E2E8F0" }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#EEF2FF"; e.currentTarget.style.borderColor = "#C7D2FE"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "white"; e.currentTarget.style.borderColor = "#E2E8F0"; }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to edit inputs
+            </button>
+            <div className="bg-white rounded-2xl p-6" style={{ border: "1px solid rgba(99,102,241,0.1)" }}>
+              <PlanDisplay plan={plan} onSave={handleSave} saving={saving} saved={saved} />
+            </div>
+          </div>
+        ) : (
+          /* STEP 1 — centered input form (full attention, no cramped column) */
+          <div className="max-w-2xl mx-auto bg-white rounded-2xl p-6 space-y-5"
+            style={{ border: "1px solid rgba(99,102,241,0.1)" }}>
 
-          {/* LEFT — Input form */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 space-y-5"
-            style={{ border: "1px solid rgba(99,102,241,0.1)", position: "sticky", top: "80px" }}>
+            {/* Jump back to the last generated plan without regenerating */}
+            {plan && (
+              <button onClick={() => setEditing(false)}
+                className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-all"
+                style={{ background: "#EEF2FF", color: "#6366F1", border: "1px solid #C7D2FE" }}
+                onMouseEnter={e => e.currentTarget.style.background = "#E0E7FF"}
+                onMouseLeave={e => e.currentTarget.style.background = "#EEF2FF"}>
+                <span>✨ Your last generated plan is ready</span>
+                <span className="flex items-center gap-1">
+                  View result
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </button>
+            )}
+
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <div className="w-7 h-7 rounded-lg ai-gradient flex items-center justify-center">
@@ -550,7 +772,7 @@ export default function LessonPlannerPage() {
                 style={{ border: "1.5px solid #E2E8F0", color: "#0F172A", background: "white" }}
                 onFocus={e => { e.target.style.border = "1.5px solid #6366F1"; e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
                 onBlur={e =>  { e.target.style.border = "1.5px solid #E2E8F0"; e.target.style.boxShadow = "none"; }}>
-                {chapters.map(c => <option key={c} value={c}>{c}</option>)}
+                {chapters.map(c => <option key={c.chapter_id} value={c.chapter_id}>{c.content_title}</option>)}
               </select>
             </div>
 
@@ -640,6 +862,14 @@ export default function LessonPlannerPage() {
               />
             </div>
 
+            {/* Generation error */}
+            {genError && (
+              <div className="rounded-xl px-4 py-3 text-sm font-medium"
+                style={{ background: "#FEF2F2", color: "#B91C1C", border: "1px solid #FECACA" }}>
+                {genError}
+              </div>
+            )}
+
             {/* Generate button */}
             <button onClick={handleGenerate} disabled={!chapter || generating}
               className="w-full py-3 rounded-xl text-sm font-bold cursor-pointer transition-all flex items-center justify-center gap-2"
@@ -661,38 +891,7 @@ export default function LessonPlannerPage() {
               )}
             </button>
           </div>
-
-          {/* RIGHT — Generated plan */}
-          <div className="lg:col-span-3" ref={rightRef}>
-            {generating ? (
-              <div className="bg-white rounded-2xl overflow-hidden"
-                style={{ border: "1px solid rgba(99,102,241,0.1)" }}>
-                <GeneratingAnimation />
-              </div>
-            ) : plan ? (
-              <div className="bg-white rounded-2xl p-6 overflow-y-auto"
-                style={{ border: "1px solid rgba(99,102,241,0.1)" }}>
-                <PlanDisplay plan={plan} onSave={handleSave} saving={saving} saved={saved} />
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl flex flex-col items-center justify-center min-h-[500px]"
-                style={{ border: "1.5px dashed #C7D2FE" }}>
-                <div className="w-16 h-16 rounded-2xl ai-gradient flex items-center justify-center mb-4 opacity-60">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </div>
-                <p className="text-base font-semibold mb-1" style={{ color: "#94A3B8", fontFamily: "var(--font-space-grotesk)" }}>
-                  Your lesson plan will appear here
-                </p>
-                <p className="text-sm" style={{ color: "#CBD5E1" }}>
-                  Select a chapter and click Generate
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+        )
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { NotesProvider } from "@/context/NotesContext";
+import { ToastProvider } from "@/components/ui/Toast";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
 
@@ -19,15 +20,11 @@ function DashboardShell({ children }) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      router.push("/");
-    }
-  }, [isAuthenticated, isLoading, router]);
+  useEffect(() => {}, [isAuthenticated, isLoading, router]);
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-bg min-h-screen">
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a] min-h-screen">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-text-lighter">Loading dashboard...</p>
@@ -35,12 +32,9 @@ function DashboardShell({ children }) {
       </div>
     );
   }
-
-  if (!isAuthenticated) return null;
-
+ 
   return (
-    <NotesProvider>
-    <div className="flex min-h-screen bg-bg">
+    <div className="flex min-h-screen bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#0f172a]">
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
@@ -50,14 +44,17 @@ function DashboardShell({ children }) {
         <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
-    </NotesProvider>
   );
 }
 
 export default function DashboardLayout({ children }) {
   return (
     <AuthProvider>
-        <DashboardShell>{children}</DashboardShell>
+      <NotesProvider>
+        <ToastProvider>
+          <DashboardShell>{children}</DashboardShell>
+        </ToastProvider>
+      </NotesProvider>
     </AuthProvider>
   );
 }

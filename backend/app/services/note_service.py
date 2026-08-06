@@ -1,12 +1,16 @@
+"""
+Note service for the normalized SSS teacher-notes table.
+"""
+
 from typing import List, Optional
+
 from sqlalchemy.orm import Session
 
 from app.models.note import TeacherNote
-from app.schemas.note import NoteCreate, NoteUpdate, NoteOut
+from app.schemas.note import NoteCreate, NoteOut, NoteUpdate
 
 
 def _to_out(note: TeacherNote) -> NoteOut:
-    """Convert DB model → NoteOut (using frontend-compatible field names)."""
     return NoteOut(
         id=f"N{note.note_id}",
         title=note.title,
@@ -24,21 +28,35 @@ def get_notes(db: Session, teacher_id: int) -> List[NoteOut]:
     notes = (
         db.query(TeacherNote)
         .filter(TeacherNote.teacher_id == teacher_id)
-        .order_by(TeacherNote.updated_at.desc())
+        .order_by(TeacherNote.created_at.desc())
         .all()
     )
-    return [_to_out(n) for n in notes]
+
+    return [_to_out(note) for note in notes]
 
 
-def get_note(db: Session, teacher_id: int, note_id: int) -> Optional[NoteOut]:
-    note = db.query(TeacherNote).filter(
-        TeacherNote.note_id == note_id,
-        TeacherNote.teacher_id == teacher_id,
-    ).first()
+def get_note(
+    db: Session,
+    teacher_id: int,
+    note_id: int,
+) -> Optional[NoteOut]:
+    note = (
+        db.query(TeacherNote)
+        .filter(
+            TeacherNote.note_id == note_id,
+            TeacherNote.teacher_id == teacher_id,
+        )
+        .first()
+    )
+
     return _to_out(note) if note else None
 
 
-def create_note(db: Session, teacher_id: int, payload: NoteCreate) -> NoteOut:
+def create_note(
+    db: Session,
+    teacher_id: int,
+    payload: NoteCreate,
+) -> NoteOut:
     note = TeacherNote(
         teacher_id=teacher_id,
         title=payload.title,
@@ -46,41 +64,63 @@ def create_note(db: Session, teacher_id: int, payload: NoteCreate) -> NoteOut:
         chapter=payload.chapter,
         content_type=payload.content_type,
         canvas_image_url=payload.canvas_image_url,
-        tags=payload.tags,
+        tags=payload.tags or [],
     )
+
     db.add(note)
     db.commit()
     db.refresh(note)
+
     return _to_out(note)
 
 
-def update_note(db: Session, teacher_id: int, note_id: int, payload: NoteUpdate) -> Optional[NoteOut]:
-    note = db.query(TeacherNote).filter(
-        TeacherNote.note_id == note_id,
-        TeacherNote.teacher_id == teacher_id,
-    ).first()
+def update_note(
+    db: Session,
+    teacher_id: int,
+    note_id: int,
+    payload: NoteUpdate,
+) -> Optional[NoteOut]:
+    note = (
+        db.query(TeacherNote)
+        .filter(
+            TeacherNote.note_id == note_id,
+            TeacherNote.teacher_id == teacher_id,
+        )
+        .first()
+    )
 
     if not note:
         return None
 
     update_data = payload.model_dump(exclude_unset=True)
+
     for field, value in update_data.items():
         setattr(note, field, value)
 
     db.commit()
     db.refresh(note)
+
     return _to_out(note)
 
 
-def delete_note(db: Session, teacher_id: int, note_id: int) -> bool:
-    note = db.query(TeacherNote).filter(
-        TeacherNote.note_id == note_id,
-        TeacherNote.teacher_id == teacher_id,
-    ).first()
+def delete_note(
+    db: Session,
+    teacher_id: int,
+    note_id: int,
+) -> bool:
+    note = (
+        db.query(TeacherNote)
+        .filter(
+            TeacherNote.note_id == note_id,
+            TeacherNote.teacher_id == teacher_id,
+        )
+        .first()
+    )
 
     if not note:
         return False
 
     db.delete(note)
     db.commit()
+
     return True

@@ -15,58 +15,91 @@
  */
 
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/context/AuthContext";
 import { fetchNotes, createNote, updateNote, deleteNote, fetchChapters } from "@/lib/api";
-import { FALLBACK_NOTES, FALLBACK_CHAPTERS } from "@/lib/staticData";
+import { useAuth } from "@/context/AuthContext";
 
 const NotesContext = createContext(undefined);
 
 export function NotesProvider({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [notes, setNotes] = useState([]);
   const [chapters, setChapters] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load notes + chapters from backend on mount
+  // Load notes + chapters once auth has resolved (so the token exists).
+  // Re-runs when the user becomes available — fixes the mount-time token race
+  // where the first fetch fired before AuthContext stored the token.
   useEffect(() => {
-  // Login avvakapothe API call cheyyoddu
-  if (!isAuthenticated) {
-    setNotes(FALLBACK_NOTES);
-    setChapters(FALLBACK_CHAPTERS);
-    setIsLoading(false);
-    return;
-  }
+    if (authLoading) return;
 
-  const load = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const [notesData, chaptersData] = await Promise.all([
-        fetchNotes(),
-        fetchChapters(),
-      ]);
-
-      setNotes(notesData.length ? notesData : FALLBACK_NOTES);
-      setChapters(
-        chaptersData.length ? chaptersData : FALLBACK_CHAPTERS
-      );
-    } catch (err) {
-      console.warn(
-        "Notes API unavailable, using offline data:",
-        err.message
-      );
-
-      setNotes(FALLBACK_NOTES);
-      setChapters(FALLBACK_CHAPTERS);
-    } finally {
+    if (!user) {
+      setNotes([]);
+      setChapters([]);
       setIsLoading(false);
+      return;
     }
-  };
 
-  load();
-}, [isAuthenticated]);
+    const load = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      let notesError = null;
+      let chaptersError = null;
+
+      try {
+        const notesData = await fetchNotes();
+
+        setNotes(
+          Array.isArray(notesData)
+            ? notesData
+            : []
+        );
+      } catch (err) {
+        console.error("Notes API error:", err);
+        setNotes([]);
+        notesError = err;
+      }
+
+      try {
+        const chaptersData =
+          await fetchChapters();
+
+        setChapters(
+          Array.isArray(chaptersData)
+            ? chaptersData
+            : []
+        );
+      } catch (err) {
+        console.error(
+          "Chapters API error:",
+          err
+        );
+        setChapters([]);
+        chaptersError = err;
+      }
+
+      if (notesError && chaptersError) {
+        setError(
+          "Unable to load notes and chapters."
+        );
+      } else if (notesError) {
+        setError(
+          notesError.message ||
+            "Unable to load notes."
+        );
+      } else if (chaptersError) {
+        setError(
+          chaptersError.message ||
+            "Unable to load chapters."
+        );
+      }
+
+      setIsLoading(false);
+    };
+
+    load();
+  }, [user, authLoading]);
 
   /**
    * Add a new note — POST /api/v1/notes

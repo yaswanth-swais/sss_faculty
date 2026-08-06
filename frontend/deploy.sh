@@ -1,5 +1,5 @@
 #!/bin/bash
-# ─── SSS Faculty Frontend — Deployment Script ──────────────────────────────
+# ─── SGS Faculty Frontend — Deployment Script ──────────────────────────────
 # Builds Next.js standalone and cleans up to minimize disk usage
 
 set -e
@@ -33,9 +33,9 @@ npm cache clean --force 2>/dev/null || true
 
 # 7. Restart PM2 process
 echo "⚙️  Restarting PM2..."
-pm2 describe sss-faculty-frontend > /dev/null 2>&1 \
-  && pm2 restart sss-faculty-frontend \
-  || PORT=4002 pm2 start "node .next/standalone/server.js" --name "sss-faculty-frontend"
+pm2 describe sgs-faculty-frontend > /dev/null 2>&1 \
+  && pm2 restart sgs-faculty-frontend \
+  || PORT=4002 pm2 start "node .next/standalone/server.js" --name "sgs-faculty-frontend"
 
 pm2 save
 

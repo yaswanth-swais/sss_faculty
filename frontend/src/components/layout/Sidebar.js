@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   {
@@ -14,7 +17,7 @@ const navItems = [
     ),
   },
   {
-    label: "Notes",
+    label: "Notes/Chapters",
     href: "/dashboard/notes",
     icon: (
       <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -59,10 +62,61 @@ const navItems = [
       </svg>
     ),
   },
+  {
+    label: "Auto Test",
+    href: "/dashboard/auto-test",
+    badge: "AI",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+      </svg>
+    ),
+  },
+  /* Auto Correct — hidden from the menu (page & route kept intact; re-enable by uncommenting)
+  {
+    label: "Auto Correct",
+    href: "/dashboard/auto-correct",
+    badge: "AI",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  */
+  {
+    label: "Translator",
+    href: "/dashboard/translator",
+    badge: "AI",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+      </svg>
+    ),
+  },
+  {
+    label: "Audio Translator",
+    href: "/dashboard/audio-translator",
+    badge: "AI",
+    icon: (
+      <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-7V4a3 3 0 00-3-3H9" />
+      </svg>
+    ),
+  },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
+  const { logout } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    await logout();
+    window.location.href = "https://staging.sss.swais.in";
+  };
 
   return (
     <>
@@ -82,8 +136,8 @@ export default function Sidebar({ isOpen, onClose }) {
             <img className="rounded-xl" src="https://www.image2url.com/r2/default/images/1780034724660-ae70f995-be5a-4e65-a6bd-4afb19e192d7.jpg"/>
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-[15px] font-bold leading-tight tracking-tight ai-gradient-text">SSS SCHOOL</h1>
-            <p className="text-[10px] leading-tight mt-0.5" style={{ color: "#475569" }}>FACULTY DASHBOARD</p>
+            <h1 className="text-[15px] font-bold leading-tight tracking-tight ai-gradient-text">SSS School</h1>
+            <p className="text-[10px] leading-tight mt-0.5" style={{ color: "#475569" }}>AI-Powered Faculty Portal</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg lg:hidden cursor-pointer" style={{ color: "#475569" }} aria-label="Close sidebar">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,14 +152,20 @@ export default function Sidebar({ isOpen, onClose }) {
             Main Menu
           </p>
 
-          {navItems.map((item) => {
+          {navItems.map((item, idx) => {
             const isActive = item.href === "/dashboard"
               ? pathname === "/dashboard"
               : pathname.startsWith(item.href);
+            const isFirstAI = item.badge === "AI" && (idx === 0 || navItems[idx - 1].badge !== "AI");
 
             return (
+              <div key={item.label}>
+              {isFirstAI && (
+                <p className="px-3 mt-4 mb-3 text-[9px] font-semibold uppercase tracking-widest" style={{ color: "#334155" }}>
+                  AI Features
+                </p>
+              )}
               <Link
-                key={item.label}
                 href={item.href}
                 onClick={onClose}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group"
@@ -126,25 +186,203 @@ export default function Sidebar({ isOpen, onClose }) {
                 )}
                 {isActive && !item.badge && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400" />}
               </Link>
+              </div>
             );
           })}
         </nav>
 
         {/* Footer — AI badge */}
-        <div className="px-4 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: "rgba(99,102,241,0.1)" }}>
+        {/* Footer */}
+        <div
+          className="px-4 py-4 space-y-3"
+          style={{
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+          }}
+        >
+          {/* AI Status */}
+          <div
+            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
+            style={{
+              background: "rgba(99,102,241,0.1)",
+            }}
+          >
             <div className="w-7 h-7 rounded-lg ai-gradient flex items-center justify-center shrink-0">
-              <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg
+                className="w-3.5 h-3.5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
               </svg>
             </div>
+
             <div>
-              <p className="text-[11px] font-semibold" style={{ color: "#A5B4FC" }}>AI Active</p>
-              <p className="text-[9px]" style={{ color: "#475569" }}>Powered by SWAIS Intelligence</p>
+              <p
+                className="text-[11px] font-semibold"
+                style={{ color: "#A5B4FC" }}
+              >
+                AI Active
+              </p>
+
+              <p
+                className="text-[9px]"
+                style={{ color: "#475569" }}
+              >
+                Powered by SWAIS Intelligence
+              </p>
             </div>
           </div>
+
+          {/* Logout */}
+          <button
+            type="button"
+            onClick={() => setShowLogoutConfirm(true)}
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
+            style={{
+              color: "#F87171",
+              background: "rgba(239,68,68,0.08)",
+            }}
+            onMouseEnter={(event) => {
+              event.currentTarget.style.background =
+                "rgba(239,68,68,0.16)";
+              event.currentTarget.style.color = "#FCA5A5";
+            }}
+            onMouseLeave={(event) => {
+              event.currentTarget.style.background =
+                "rgba(239,68,68,0.08)";
+              event.currentTarget.style.color = "#F87171";
+            }}
+          >
+            <svg
+              className="w-[18px] h-[18px] shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.8}
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+              />
+            </svg>
+
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
+      {showLogoutConfirm &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center px-4"
+            style={{
+              background: "rgba(15,23,42,0.55)",
+              backdropFilter: "blur(4px)",
+              WebkitBackdropFilter: "blur(4px)",
+            }}
+            onClick={() => {
+              if (!loggingOut) {
+                setShowLogoutConfirm(false);
+              }
+            }}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+              style={{
+                background: "#FFFFFF",
+                border:
+                  "1px solid rgba(99,102,241,0.1)",
+              }}
+              onClick={(event) =>
+                event.stopPropagation()
+              }
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="logout-confirm-title"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "#FEF2F2" }}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="#EF4444"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                    />
+                  </svg>
+                </div>
+
+                <h2
+                  id="logout-confirm-title"
+                  className="text-base font-bold"
+                  style={{
+                    color: "#0F172A",
+                    fontFamily:
+                      "var(--font-space-grotesk)",
+                  }}
+                >
+                  Sign out?
+                </h2>
+              </div>
+
+              <p
+                className="text-sm mb-5"
+                style={{ color: "#64748B" }}
+              >
+                You will be signed out of the faculty
+                portal.
+              </p>
+
+              <div className="flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowLogoutConfirm(false)
+                  }
+                  disabled={loggingOut}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all disabled:opacity-60"
+                  style={{
+                    color: "#64748B",
+                    background: "#F1F5F9",
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all disabled:cursor-not-allowed"
+                  style={{
+                    color: "#FFFFFF",
+                    background: "#EF4444",
+                    opacity: loggingOut ? 0.7 : 1,
+                  }}
+                >
+                  {loggingOut
+                    ? "Signing out..."
+                    : "Yes, Sign Out"}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
     </>
   );
 }

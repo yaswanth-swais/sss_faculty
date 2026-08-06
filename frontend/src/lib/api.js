@@ -32,6 +32,17 @@ async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
 
   if (!res.ok) {
+    // 401 on a protected endpoint means token is invalid/expired — clear session and send to login
+    // Skip this for the login endpoint itself (it legitimately returns 401 for bad credentials)
+    if (res.status === 401 && !path.includes("/auth/login")) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem("swais_faculty_auth");
+      if (typeof window !== "undefined") {
+        window.location.href = process.env.NODE_ENV === "development"
+          ? "/"
+          : "https://staging.sss.swais.in";
+      }
+    }
     let detail = `HTTP ${res.status}`;
     try {
       const body = await res.json();
@@ -39,7 +50,9 @@ async function request(path, options = {}) {
     } catch {
       /* ignore */
     }
-    throw new Error(detail);
+    const err = new Error(detail);
+    err.status = res.status;   // mark as an HTTP error so callers can distinguish from network errors
+    throw err;
   }
 
   // 204 No Content — no body
@@ -53,22 +66,6 @@ async function request(path, options = {}) {
  * Authenticate teacher — POST /api/v1/auth/login
  * Stores JWT in localStorage on success.
  */
-// Demo credentials accepted when the backend is unreachable
-const DEMO_USER = {
-  id:           "T016",
-  teacher_id:   16,
-  name:         "Sandipani Acharya",
-  email:        "sandipani.acharya@swais.edu",
-  avatar:       "SA",
-  subject:      "Social Studies",
-  class:        "8th Grade",
-  section:      "A",
-  school:       "SWAIS",
-  totalStudents: 10,
-};
-const DEMO_EMAIL    = "sandipani.acharya@swais.edu";
-const DEMO_PASSWORD = "swais@123";
-
 export async function loginTeacher(email, password) {
   try {
     const data = await request("/api/v1/auth/login", {
@@ -90,21 +87,40 @@ export async function loginTeacher(email, password) {
       class: data.class_assigned,
       section: data.section,
       school: data.school_name,
-      totalStudents: 10,
+      totalStudents: data.total_students ?? null,
     };
 
     return { success: true, user };
   } catch (err) {
-    // Network/API unreachable — allow demo credentials so the app is still usable
-    if (
-      email.trim().toLowerCase() === DEMO_EMAIL &&
-      password === DEMO_PASSWORD
-    ) {
-      // Store a placeholder token so guarded fetches don't short-circuit
-      localStorage.setItem(TOKEN_KEY, "offline-demo-token");
-      return { success: true, user: DEMO_USER };
+    // Surface the real error — no offline/demo fallback.
+    if (err.status) {
+      return { success: false, error: err.message || "Invalid email or password." };
     }
-    return { success: false, error: "Unable to reach server. Use demo credentials to explore offline." };
+    return { success: false, error: "Unable to reach the server. Please try again." };
+  }
+}
+
+/**
+ * Fetch current user profile from token — GET /api/v1/auth/me
+ * Called on app load when a JWT exists but no user profile is cached.
+ */
+export async function fetchMe() {
+  try {
+    const data = await request("/api/v1/auth/me");
+    return {
+      id: `T${String(data.teacher_id).padStart(3, "0")}`,
+      teacher_id: data.teacher_id,
+      name: data.name,
+      email: data.email,
+      avatar: data.avatar_initials || data.name.slice(0, 2).toUpperCase(),
+      subject: data.subject,
+      class: data.class_assigned,
+      section: data.section,
+      school: data.school_name,
+      totalStudents: data.total_students ?? null,
+    };
+  } catch {
+    return null;
   }
 }
 
@@ -184,6 +200,13 @@ export async function deleteNote(id) {
 export async function fetchChapters() {
   const data = await request("/api/v1/chapters");
   return data.chapters;
+}
+
+/**
+ * Fetch a single chapter's full text — GET /api/v1/chapters/:id
+ */
+export async function fetchChapterDetail(chapterId) {
+  return request(`/api/v1/chapters/${chapterId}`);
 }
 
 /**

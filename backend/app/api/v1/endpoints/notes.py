@@ -16,8 +16,6 @@ def list_notes(
     db: Session = Depends(get_db),
 ):
     """Fetch all notes for the authenticated teacher."""
-    print("Teacher ID =", teacher.teacher_id)
-
     notes = note_service.get_notes(db, teacher.teacher_id)
     return NoteListResponse(notes=notes, total=len(notes))
 

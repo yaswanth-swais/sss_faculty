@@ -1,18 +1,23 @@
 """
-TeacherNote — teacher_notes table (new table created by our migration).
-Stores typed, voice-transcribed, and handwritten notes created by faculty.
-canvasImageUrl stores base64 PNG for handwritten notes (TODO: move to S3).
+Teacher notes model.
 
-This content is the source material for:
-  - Student/parent delivery (voice TTS via AWS Polly — future)
-  - Chapter-wise curriculum notes
+Maps SGS notes functionality to the normalized SSS teacher-notes table.
 """
 
 import enum
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime, Enum as SAEnum, ARRAY
-from sqlalchemy.orm import relationship
+
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    DateTime,
+    Enum as SAEnum,
+    ForeignKey,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship
 
 from app.db.session import Base
 
@@ -26,28 +31,70 @@ class ContentType(str, enum.Enum):
 class TeacherNote(Base):
     __tablename__ = "sss_teacher_notes"
 
-    note_id = Column(Integer, primary_key=True, autoincrement=True)
+    note_id = Column(
+        BigInteger,
+        primary_key=True,
+        autoincrement=True,
+    )
 
     teacher_id = Column(
-        Integer,
-        ForeignKey("sss_teacher_master.teacher_id", ondelete="CASCADE"),
+        BigInteger,
+        ForeignKey(
+            "sss_teacher_master.teacher_id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
         index=True,
     )
 
-    title = Column(String(500), nullable=False)
-    content = Column(Text, nullable=True)               # Text content (typed or voice transcript)
-    chapter = Column(String(255), nullable=False)       # e.g. "Chapter 1 - The Indian Constitution"
-    content_type = Column(SAEnum(ContentType), nullable=False, default=ContentType.typed)
-    canvas_image_url = Column(Text, nullable=True)      # base64 PNG; TODO: replace with S3 URL
-    tags = Column(JSONB, nullable=True, default=list)   # ["constitution", "preamble"]
+    title = Column(
+        String(500),
+        nullable=False,
+    )
 
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    content = Column(
+        Text,
+        nullable=True,
+    )
+
+    chapter = Column(
+        String(255),
+        nullable=False,
+    )
+
+    content_type = Column(
+        SAEnum(
+            ContentType,
+            name="contenttype",
+            create_type=False,
+        ),
+        nullable=False,
+        default=ContentType.typed,
+    )
+
+    canvas_image_url = Column(
+        Text,
+        nullable=True,
+    )
+
+    tags = Column(
+        JSONB,
+        nullable=True,
+        default=list,
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
     updated_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
 
-    # Relationship
-    teacher = relationship("TeacherMaster", back_populates="notes")
+    teacher = relationship(
+        "TeacherMaster",
+        back_populates="notes",
+    )

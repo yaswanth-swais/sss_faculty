@@ -33,7 +33,7 @@ def seed():
         user = UserMaster(
             username="sandipani.acharya",
             email="sandipani.acharya@swais.edu",
-            password_hash=get_password_hash("swais@123"),
+            password_hash=get_password_hash("password123"),
             role=UserRole.teacher,
             is_active=True,
         )
@@ -43,8 +43,8 @@ def seed():
         # Create teacher profile
         teacher = TeacherMaster(
             user_id=user.user_id,
-            first_name="acharya",
-            last_name="sandipani",
+            first_name="Acharya",
+            last_name="Sandipani",
             phone="9876543210",
             avatar_initials="AS",
             subject="Social Studies",
@@ -56,7 +56,7 @@ def seed():
         db.add(teacher)
         db.commit()
 
-        print(f"✅ Seeded teacher: sandipani.acharya@swais.edu / swais@123")
+        print(f"✅ Seeded teacher: sandipani.acharya@swais.edu / password123")
         print(f"   user_id={user.user_id}, teacher_id={teacher.teacher_id}")
     except Exception as e:
         db.rollback()

@@ -1,4 +1,4 @@
-name: Deploy sss.swais.in
+name: Deploy sgs.swais.in
 
 on:
   push:
@@ -20,7 +20,7 @@ jobs:
             set -e
 
             echo ">>> Pull latest code..."
-            cd /home/ubuntu/sss-frontend
+            cd /home/ubuntu/sgs-frontend
             git pull origin main
 
             echo ">>> Setup Node..."
@@ -33,7 +33,7 @@ jobs:
             npm run build
 
             echo ">>> Restart app..."
-            pm2 restart sss-frontend
+            pm2 restart sgs-frontend
             pm2 save
 
             echo "Deploy complete!"
