@@ -18,7 +18,7 @@ def get_report(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
-    teacher_id = numeric_teacher_id(teacher.teacher_id)
+    teacher_id = teacher.teacher_id
 
     class_record = (
         db.query(ClassMaster)

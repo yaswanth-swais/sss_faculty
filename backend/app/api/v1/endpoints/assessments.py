@@ -54,7 +54,7 @@ def list_assessments(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
-    teacher_id = numeric_teacher_id(teacher.teacher_id)
+    teacher_id = teacher.teacher_id
     assessments = (
         db.query(Assessment)
         .filter(Assessment.teacher_id == teacher_id)
@@ -73,7 +73,7 @@ def get_assessment(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
-    teacher_id = numeric_teacher_id(teacher.teacher_id)
+    teacher_id = teacher.teacher_id
     a = db.query(Assessment).filter(
         Assessment.assessment_id == assessment_id,
         Assessment.teacher_id == teacher_id,
