@@ -5,6 +5,7 @@ get_current_teacher — verifies JWT and returns the authenticated teacher's ID.
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy import cast, String
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -48,7 +49,11 @@ def get_current_teacher(
     if not teacher_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing teacher_id")
 
-    teacher = db.query(TeacherMaster).filter(TeacherMaster.teacher_id == teacher_id).first()
+    # sss_teacher_master.teacher_id is VARCHAR in the DB while the model maps it as
+    # Integer — compare as text to avoid "operator does not exist: varchar = integer".
+    teacher = db.query(TeacherMaster).filter(
+        cast(TeacherMaster.teacher_id, String) == str(teacher_id)
+    ).first()
     
     if not teacher:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
