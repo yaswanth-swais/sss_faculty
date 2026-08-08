@@ -75,7 +75,7 @@ def sso_token(
     if not teacher:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Teacher not found")
 
-    user = db.query(UserMaster).filter(UserMaster.login_id == email).first()
+    user = db.query(UserMaster).filter(UserMaster.email == email).first()
     user_id = user.user_id if user else teacher.teacher_id
 
     token = create_access_token(data={
