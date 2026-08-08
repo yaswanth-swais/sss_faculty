@@ -17,7 +17,7 @@ from app.models.user import UserMaster
 bearer_scheme = HTTPBearer()
 
 _DEV_TEACHER = TeacherMaster(
-    teacher_id=1,
+    teacher_id="DEV",
     full_name="Dev Teacher",
     email_id="dev@swais.edu",
     subject_name="Social Studies",

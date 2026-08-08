@@ -13,7 +13,7 @@ from app.db.session import Base
 class TeacherMaster(Base):
     __tablename__ = "sss_teacher_master"
 
-    teacher_id   = Column(BigInteger, primary_key=True)
+    teacher_id   = Column(String(50), primary_key=True)  # alphanumeric IDs e.g. "T022"
     full_name    = Column(String(255), nullable=False)
     subject_name = Column(String(255), nullable=True)
     class_id     = Column(BigInteger, nullable=True)
