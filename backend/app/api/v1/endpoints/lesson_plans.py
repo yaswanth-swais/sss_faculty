@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_teacher
+from app.core.teacher_id import numeric_teacher_id
 from app.db.session import get_db
 from app.models.lesson_plan import TeacherLessonPlan
 from app.models.teacher import TeacherMaster
@@ -40,7 +41,7 @@ def list_plans(
 ):
     records = (
         db.query(TeacherLessonPlan)
-        .filter(TeacherLessonPlan.teacher_id == teacher.teacher_id)
+        .filter(TeacherLessonPlan.teacher_id == numeric_teacher_id(teacher.teacher_id))
         .order_by(TeacherLessonPlan.created_at.desc())
         .all()
     )
@@ -78,7 +79,7 @@ def save_plan(
 ):
     plan = body.plan
     record = TeacherLessonPlan(
-        teacher_id=teacher.teacher_id,
+        teacher_id=numeric_teacher_id(teacher.teacher_id),
         title=plan.get("title", "Untitled Plan"),
         chapter_text=plan.get("chapter_text"),
         duration_minutes=plan.get("duration_minutes"),
@@ -99,7 +100,7 @@ def delete_plan(
 ):
     record = db.query(TeacherLessonPlan).filter(
         TeacherLessonPlan.lesson_plan_id == plan_id,
-        TeacherLessonPlan.teacher_id == teacher.teacher_id,
+        TeacherLessonPlan.teacher_id == numeric_teacher_id(teacher.teacher_id),
     ).first()
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Plan not found")

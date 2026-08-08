@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.api.deps import get_current_teacher
+from app.core.teacher_id import numeric_teacher_id
 from app.models.teacher import TeacherMaster
 from app.models.student import StudentMaster
 from app.models.assessment import Assessment
@@ -17,7 +18,7 @@ def get_report(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
-    teacher_id = teacher.teacher_id
+    teacher_id = numeric_teacher_id(teacher.teacher_id)
 
     class_record = (
         db.query(ClassMaster)
@@ -111,7 +112,7 @@ def get_report(
     )
 
     return ReportResponse(
-        teacher_id=teacher_id,
+        teacher_id=teacher.teacher_id,
         class_name=class_name,
         section=section_name,
         total_students=len(students),

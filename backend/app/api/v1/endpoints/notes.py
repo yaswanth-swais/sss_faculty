@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.api.deps import get_current_teacher
+from app.core.teacher_id import numeric_teacher_id
 from app.models.teacher import TeacherMaster
 from app.schemas.note import NoteCreate, NoteUpdate, NoteOut, NoteListResponse
 from app.services import note_service
@@ -16,7 +17,7 @@ def list_notes(
     db: Session = Depends(get_db),
 ):
     """Fetch all notes for the authenticated teacher."""
-    notes = note_service.get_notes(db, teacher.teacher_id)
+    notes = note_service.get_notes(db, numeric_teacher_id(teacher.teacher_id))
     return NoteListResponse(notes=notes, total=len(notes))
 
 
@@ -27,7 +28,7 @@ def create_note(
     db: Session = Depends(get_db),
 ):
     """Create a new note (typed / voice / handwritten)."""
-    return note_service.create_note(db, teacher.teacher_id, payload)
+    return note_service.create_note(db, numeric_teacher_id(teacher.teacher_id), payload)
 
 
 @router.get("/{note_id}", response_model=NoteOut)
@@ -36,7 +37,7 @@ def get_note(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
-    note = note_service.get_note(db, teacher.teacher_id, note_id)
+    note = note_service.get_note(db, numeric_teacher_id(teacher.teacher_id), note_id)
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     return note
@@ -49,7 +50,7 @@ def update_note(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
-    note = note_service.update_note(db, teacher.teacher_id, note_id, payload)
+    note = note_service.update_note(db, numeric_teacher_id(teacher.teacher_id), note_id, payload)
     if not note:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")
     return note
@@ -61,6 +62,6 @@ def delete_note(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
-    deleted = note_service.delete_note(db, teacher.teacher_id, note_id)
+    deleted = note_service.delete_note(db, numeric_teacher_id(teacher.teacher_id), note_id)
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Note not found")

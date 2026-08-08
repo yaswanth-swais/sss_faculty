@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List
 from sqlalchemy.orm import Session
-
+from app.core.teacher_id import numeric_teacher_id
 from app.models.assignment import AssignmentMaster, AssignmentResult
 from app.models.subject import SubjectMaster
 from app.models.student import StudentMaster
@@ -64,10 +64,7 @@ def get_assignments(db: Session, teacher: TeacherMaster) -> List[AssignmentOut]:
 
 def create_assignment(db: Session, teacher: TeacherMaster, payload: AssignmentCreate) -> AssignmentOut:
     """Create an assignment for the teacher's class (used by the Assign-work modal)."""
-    try:
-        assigned_by = int(teacher.teacher_id)
-    except (TypeError, ValueError):
-        assigned_by = None
+    assigned_by = numeric_teacher_id(teacher.teacher_id)
 
     a = AssignmentMaster(
         assignment_title=payload.title,

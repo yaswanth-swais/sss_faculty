@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.api.deps import get_current_teacher
+from app.core.teacher_id import numeric_teacher_id
 from app.models.teacher import TeacherMaster
 from app.models.assessment import Assessment, AssessmentResult
 from app.schemas.assessment import (
@@ -53,9 +54,10 @@ def list_assessments(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
+    teacher_id = numeric_teacher_id(teacher.teacher_id)
     assessments = (
         db.query(Assessment)
-        .filter(Assessment.teacher_id == teacher.teacher_id)
+        .filter(Assessment.teacher_id == teacher_id)
         .order_by(Assessment.assessment_date.desc())
         .all()
     )
@@ -71,9 +73,10 @@ def get_assessment(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
+    teacher_id = numeric_teacher_id(teacher.teacher_id)
     a = db.query(Assessment).filter(
         Assessment.assessment_id == assessment_id,
-        Assessment.teacher_id == teacher.teacher_id,
+        Assessment.teacher_id == teacher_id,
     ).first()
     if not a:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Assessment not found")
