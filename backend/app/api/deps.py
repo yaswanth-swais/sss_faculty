@@ -5,6 +5,7 @@ get_current_teacher — verifies JWT and returns the authenticated teacher's ID.
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy import cast, String
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -31,10 +32,11 @@ def get_current_teacher(
     if not teacher_id:
         raise HTTPException(status_code=401, detail="Token missing teacher_id")
 
-    teacher_id = int(teacher_id)
-
+    # The DB column sss_teacher_master.teacher_id is VARCHAR while the model maps
+    # it as Integer, so compare as text (cast column + stringify value) — avoids
+    # Postgres "operator does not exist: character varying = integer".
     teacher = db.query(TeacherMaster).filter(
-        TeacherMaster.teacher_id == teacher_id
+        cast(TeacherMaster.teacher_id, String) == str(teacher_id)
     ).first()
 
     if not teacher:
