@@ -1,5 +1,5 @@
 #!/bin/bash
-# ─── SGS Faculty Backend — Deployment Script ───────────────────────────────
+# ─── SSS Faculty Backend — Deployment Script ───────────────────────────────
 # Installs dependencies and cleans up to minimize disk usage
 
 set -e
@@ -37,9 +37,9 @@ pip cache purge 2>/dev/null || true
 
 # 6. Restart PM2 process
 echo "⚙️  Restarting PM2..."
-pm2 describe sgs-faculty-backend > /dev/null 2>&1 \
-  && pm2 restart sgs-faculty-backend \
-  || pm2 start ".venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000" --name "sgs-faculty-backend"
+pm2 describe sss_faculty_backend > /dev/null 2>&1 \
+  && pm2 restart sss_faculty_backend \
+  || pm2 start ".venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000" --name "sss_faculty_backend"
 
 pm2 save
 

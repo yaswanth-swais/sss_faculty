@@ -15,7 +15,7 @@ def list_students(
     teacher: TeacherMaster = Depends(get_current_teacher),
     db: Session = Depends(get_db),
 ):
-    # Students linked to teacher via class_id (no direct teacher_id FK in sgs schema)
+    # Students linked to teacher via class_id (no direct teacher_id FK in sss schema)
     students = (
         db.query(StudentMaster)
         .filter(StudentMaster.class_id == teacher.class_id)

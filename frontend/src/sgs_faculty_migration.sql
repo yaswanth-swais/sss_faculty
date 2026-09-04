@@ -1,14 +1,14 @@
 -- =============================================================================
---  SGS Faculty Module — Migration Script
+--  SSS Faculty Module — Migration Script
 --  Version      : 1.0.0  |  Date: 2026-05-20
 --
---  Database     : PostgreSQL (AWS RDS — existing sgs_prod DB)
+--  Database     : PostgreSQL (AWS RDS — existing sss_prod DB)
 --
 --  PURPOSE:
 --    Adds ONLY the net-new tables required by the faculty module.
 --    All duplicate concepts (schools, teachers, students, chapters) already
---    exist in prod as sgs_school_master, sgs_teacher_master,
---    sgs_student_master, sgs_chapter_master — this script references those.
+--    exist in prod as sss_school_master, sss_teacher_master,
+--    sss_student_master, sss_chapter_master — this script references those.
 --
 --  SAFE TO RUN ON PROD: Yes — only CREATE IF NOT EXISTS / new objects.
 -- =============================================================================
@@ -50,19 +50,19 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- =============================================================================
---  TABLE: sgs_assessments
+--  TABLE: sss_assessments
 --  One row per assessment (quiz / test / exam / assignment) created by a
---  teacher. References sgs_teacher_master and sgs_chapter_master.
+--  teacher. References sss_teacher_master and sss_chapter_master.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS public.sgs_assessments (
+CREATE TABLE IF NOT EXISTS public.sss_assessments (
     assessment_id       BIGSERIAL               PRIMARY KEY,
     teacher_id          BIGINT                  NOT NULL
-                            REFERENCES public.sgs_teacher_master(teacher_id)
+                            REFERENCES public.sss_teacher_master(teacher_id)
                             ON DELETE CASCADE,
     title               VARCHAR(300)            NOT NULL,
     assessment_type     assessment_type         NOT NULL DEFAULT 'test',
     chapter_id          BIGINT
-                            REFERENCES public.sgs_chapter_master(chapter_id)
+                            REFERENCES public.sss_chapter_master(chapter_id)
                             ON DELETE SET NULL,
     chapter             VARCHAR(300),                       -- display label
     assessment_date     DATE,
@@ -78,32 +78,32 @@ CREATE TABLE IF NOT EXISTS public.sgs_assessments (
     version_no          INT                     NOT NULL DEFAULT 1
 );
 
-CREATE INDEX IF NOT EXISTS idx_sgs_assessments_teacher
-    ON public.sgs_assessments(teacher_id);
+CREATE INDEX IF NOT EXISTS idx_sss_assessments_teacher
+    ON public.sss_assessments(teacher_id);
 
-CREATE INDEX IF NOT EXISTS idx_sgs_assessments_chapter
-    ON public.sgs_assessments(chapter_id);
+CREATE INDEX IF NOT EXISTS idx_sss_assessments_chapter
+    ON public.sss_assessments(chapter_id);
 
-CREATE INDEX IF NOT EXISTS idx_sgs_assessments_date
-    ON public.sgs_assessments(assessment_date);
+CREATE INDEX IF NOT EXISTS idx_sss_assessments_date
+    ON public.sss_assessments(assessment_date);
 
-CREATE OR REPLACE TRIGGER set_updated_at_sgs_assessments
-    BEFORE UPDATE ON public.sgs_assessments
+CREATE OR REPLACE TRIGGER set_updated_at_sss_assessments
+    BEFORE UPDATE ON public.sss_assessments
     FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
 -- =============================================================================
---  TABLE: sgs_assessment_results
+--  TABLE: sss_assessment_results
 --  One row per student per assessment.
 --  marks_obtained = NULL means the student was absent.
---  References sgs_assessments and sgs_student_master.
+--  References sss_assessments and sss_student_master.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS public.sgs_assessment_results (
+CREATE TABLE IF NOT EXISTS public.sss_assessment_results (
     result_id           BIGSERIAL               PRIMARY KEY,
     assessment_id       BIGINT                  NOT NULL
-                            REFERENCES public.sgs_assessments(assessment_id)
+                            REFERENCES public.sss_assessments(assessment_id)
                             ON DELETE CASCADE,
     student_id          BIGINT                  NOT NULL
-                            REFERENCES public.sgs_student_master(student_id)
+                            REFERENCES public.sss_student_master(student_id)
                             ON DELETE CASCADE,
     roll_number         VARCHAR(20)             NOT NULL,
     student_name        VARCHAR(150)            NOT NULL,   -- denormalized for fast display
@@ -118,28 +118,28 @@ CREATE TABLE IF NOT EXISTS public.sgs_assessment_results (
     UNIQUE (assessment_id, student_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_sgs_assessment_results_assessment
-    ON public.sgs_assessment_results(assessment_id);
+CREATE INDEX IF NOT EXISTS idx_sss_assessment_results_assessment
+    ON public.sss_assessment_results(assessment_id);
 
-CREATE INDEX IF NOT EXISTS idx_sgs_assessment_results_student
-    ON public.sgs_assessment_results(student_id);
+CREATE INDEX IF NOT EXISTS idx_sss_assessment_results_student
+    ON public.sss_assessment_results(student_id);
 
-CREATE OR REPLACE TRIGGER set_updated_at_sgs_assessment_results
-    BEFORE UPDATE ON public.sgs_assessment_results
+CREATE OR REPLACE TRIGGER set_updated_at_sss_assessment_results
+    BEFORE UPDATE ON public.sss_assessment_results
     FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
 -- =============================================================================
---  TABLE: sgs_parent_notifications
+--  TABLE: sss_parent_notifications
 --  Log of all notifications sent by teachers to parents.
---  References sgs_teacher_master and sgs_student_master.
+--  References sss_teacher_master and sss_student_master.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS public.sgs_parent_notifications (
+CREATE TABLE IF NOT EXISTS public.sss_parent_notifications (
     notification_id     BIGSERIAL               PRIMARY KEY,
     teacher_id          BIGINT                  NOT NULL
-                            REFERENCES public.sgs_teacher_master(teacher_id)
+                            REFERENCES public.sss_teacher_master(teacher_id)
                             ON DELETE CASCADE,
     student_id          BIGINT                  NOT NULL
-                            REFERENCES public.sgs_student_master(student_id)
+                            REFERENCES public.sss_student_master(student_id)
                             ON DELETE CASCADE,
     notification_type   notification_type       NOT NULL DEFAULT 'general',
     message_text        TEXT                    NOT NULL,
@@ -150,31 +150,31 @@ CREATE TABLE IF NOT EXISTS public.sgs_parent_notifications (
     version_no          INT                     NOT NULL DEFAULT 1
 );
 
-CREATE INDEX IF NOT EXISTS idx_sgs_parent_notif_teacher
-    ON public.sgs_parent_notifications(teacher_id);
+CREATE INDEX IF NOT EXISTS idx_sss_parent_notif_teacher
+    ON public.sss_parent_notifications(teacher_id);
 
-CREATE INDEX IF NOT EXISTS idx_sgs_parent_notif_student
-    ON public.sgs_parent_notifications(student_id);
+CREATE INDEX IF NOT EXISTS idx_sss_parent_notif_student
+    ON public.sss_parent_notifications(student_id);
 
-CREATE INDEX IF NOT EXISTS idx_sgs_parent_notif_sent_at
-    ON public.sgs_parent_notifications(sent_at);
+CREATE INDEX IF NOT EXISTS idx_sss_parent_notif_sent_at
+    ON public.sss_parent_notifications(sent_at);
 
 -- =============================================================================
---  TABLE: sgs_lesson_plans
+--  TABLE: sss_lesson_plans
 --  AI-generated lesson plans created by teachers via the Lesson Planner.
---  References sgs_teacher_master and sgs_chapter_master.
+--  References sss_teacher_master and sss_chapter_master.
 -- =============================================================================
-CREATE TABLE IF NOT EXISTS public.sgs_lesson_plans (
+CREATE TABLE IF NOT EXISTS public.sss_lesson_plans (
     lesson_plan_id      BIGSERIAL               PRIMARY KEY,
     teacher_id          BIGINT                  NOT NULL
-                            REFERENCES public.sgs_teacher_master(teacher_id)
+                            REFERENCES public.sss_teacher_master(teacher_id)
                             ON DELETE CASCADE,
     title               VARCHAR(300)            NOT NULL,
     subject             VARCHAR(100),
     class_name          VARCHAR(10),
     section             VARCHAR(5),
     chapter_id          BIGINT
-                            REFERENCES public.sgs_chapter_master(chapter_id)
+                            REFERENCES public.sss_chapter_master(chapter_id)
                             ON DELETE SET NULL,
     chapter_text        VARCHAR(300),           -- free-text label used at generation time
 
@@ -203,17 +203,17 @@ CREATE TABLE IF NOT EXISTS public.sgs_lesson_plans (
     version_no          INT                     NOT NULL DEFAULT 1
 );
 
-CREATE INDEX IF NOT EXISTS idx_sgs_lesson_plans_teacher
-    ON public.sgs_lesson_plans(teacher_id);
+CREATE INDEX IF NOT EXISTS idx_sss_lesson_plans_teacher
+    ON public.sss_lesson_plans(teacher_id);
 
-CREATE INDEX IF NOT EXISTS idx_sgs_lesson_plans_chapter
-    ON public.sgs_lesson_plans(chapter_id);
+CREATE INDEX IF NOT EXISTS idx_sss_lesson_plans_chapter
+    ON public.sss_lesson_plans(chapter_id);
 
-CREATE INDEX IF NOT EXISTS idx_sgs_lesson_plans_created
-    ON public.sgs_lesson_plans(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sss_lesson_plans_created
+    ON public.sss_lesson_plans(created_at DESC);
 
-CREATE OR REPLACE TRIGGER set_updated_at_sgs_lesson_plans
-    BEFORE UPDATE ON public.sgs_lesson_plans
+CREATE OR REPLACE TRIGGER set_updated_at_sss_lesson_plans
+    BEFORE UPDATE ON public.sss_lesson_plans
     FOR EACH ROW EXECUTE FUNCTION trigger_set_updated_at();
 
 -- =============================================================================

@@ -43,7 +43,7 @@ const VALID_LOGIN_RESPONSE = {
   subject: 'Social Studies',
   class_assigned: '8',
   section: 'A',
-  school_name: 'SGS School',
+  school_name: 'SSS School',
 }
 
 beforeEach(() => {

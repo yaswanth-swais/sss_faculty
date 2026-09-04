@@ -1,38 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import ChapterPicker from "@/components/chapters/ChapterPicker";
+import { useAuth } from "@/context/AuthContext";
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-const AI_API =
-  process.env.NEXT_PUBLIC_AI_API_BASE_URL;
+const AI_API = process.env.NEXT_PUBLIC_AI_API_BASE_URL;
 
 function getToken() {
   return typeof window !== "undefined" ? localStorage.getItem("swais_faculty_token") : null;
 }
-function getUserEmail() {
-  if (typeof window === "undefined") return "";
 
-  try {
-    const auth = JSON.parse(
-      localStorage.getItem("swais_faculty_auth") || "{}"
-    );
-
-    return auth.email || "";
-  } catch {
-    return "";
-  }
-}
 const DIFFICULTIES = ["Easy", "Medium", "Hard"];
 const QTYPES = ["MCQ", "True/False", "Short Answer"];
 
 /* ─── Configure Step ──────────────────────────────────────── */
-function ConfigStep({ chapters, onGenerate }) {
-  const [chapterId,  setChapterId]  = useState("");   // "" = nothing chosen yet (forces an explicit pick)
-  const [difficulty, setDifficulty] = useState("Medium");
-  const [qtype,      setQtype]      = useState("");        // empty = not selected
-  const [totalMarks, setTotalMarks] = useState(50);
-
-  const selectedChapter = chapters.find(c => c.chapter_id === chapterId);
+function ConfigStep({ onGenerate }) {
+  const [chapterId,   setChapterId]   = useState("");
+  const [chapterName, setChapterName] = useState("");
+  const [difficulty,  setDifficulty]  = useState("Medium");
+  const [qtype,       setQtype]       = useState("");
+  const [totalMarks,  setTotalMarks]  = useState(50);
+  const [numQuestions, setNumQuestions] = useState(20);
 
   return (
     <div className="bg-white rounded-2xl p-8 shadow-sm max-w-xl mx-auto"
@@ -57,17 +46,18 @@ function ConfigStep({ chapters, onGenerate }) {
 
         {/* Chapter */}
         <div>
-          <label className="block text-sm font-semibold mb-2" style={{ color: "#374151" }}>📖 Chapter</label>
-          <select value={chapterId} onChange={e => setChapterId(e.target.value ? Number(e.target.value) : "")}
-            className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none transition-all cursor-pointer"
-            style={{ border: "1.5px solid #E2E8F0", color: "#0F172A", background: "#F8FAFC" }}
-            onFocus={e => { e.target.style.border = "1.5px solid #6366F1"; e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.1)"; }}
-            onBlur={e  => { e.target.style.border = "1.5px solid #E2E8F0"; e.target.style.boxShadow = "none"; }}>
-            <option value="">-- Select a chapter --</option>
-            {chapters.map(c => (
-              <option key={c.chapter_id} value={c.chapter_id}>{c.content_title}</option>
-            ))}
-          </select>
+          <label className="block text-sm font-semibold mb-2" style={{ color: "#374151" }}>📖 Class / Subject / Chapter</label>
+          <ChapterPicker
+            onChapterChange={(data) => {
+              setChapterId(
+                data.chapterId
+                  ? String(data.chapterId)
+                  : ""
+              );
+
+              setChapterName(data.chapterName || "");
+            }}
+          />
         </div>
 
         {/* Difficulty */}
@@ -133,6 +123,44 @@ function ConfigStep({ chapters, onGenerate }) {
           </div>
         </div>
 
+        {/* Number of Questions */}
+        <div>
+          <label
+            className="block text-sm font-semibold mb-2 flex items-center justify-between"
+            style={{ color: "#374151" }}
+          >
+            <span>🔢 Number of Questions</span>
+
+            <span
+              className="font-bold"
+              style={{ color: "#6366F1" }}
+            >
+              {numQuestions}
+            </span>
+          </label>
+
+          <input
+            type="range"
+            min={5}
+            max={50}
+            step={5}
+            value={numQuestions}
+            onChange={e =>
+              setNumQuestions(Number(e.target.value))
+            }
+            className="w-full cursor-pointer"
+            style={{ accentColor: "#6366F1" }}
+          />
+
+          <div
+            className="flex justify-between text-[10px] mt-1"
+            style={{ color: "#94A3B8" }}
+          >
+            <span>5</span>
+            <span>50</span>
+          </div>
+        </div>
+
         {/* Preview info */}
         <div className="p-3.5 rounded-xl flex items-start gap-2.5"
           style={{ background: "linear-gradient(135deg,#EEF2FF,#F5F3FF)", border: "1px solid #DDD6FE" }}>
@@ -140,15 +168,15 @@ function ConfigStep({ chapters, onGenerate }) {
           <div>
             <p className="text-xs font-bold" style={{ color: "#6366F1" }}>AI will generate:</p>
             <p className="text-xs mt-0.5" style={{ color: "#64748B" }}>
-              <span className="font-semibold">{difficulty}</span> · {totalMarks} marks ·{" "}
+              <span className="font-semibold">{difficulty}</span> · {totalMarks} marks ·{" "} . {numQuestions} questions 
               <span className="font-semibold">{qtype || "All question types"}</span> ·{" "}
-              {selectedChapter?.chapter_name || "Selected chapter"}
+              {chapterName || "Selected chapter"}
             </p>
           </div>
         </div>
 
         <button
-          onClick={() => onGenerate({ chapterId, chapterName: selectedChapter?.content_title || "", difficulty, totalMarks, qtype })}
+          onClick={() => onGenerate({ chapterId, chapterName, difficulty, totalMarks,numQuestions, qtype })}
           disabled={!chapterId}
           className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all cursor-pointer ai-gradient hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
           style={{ boxShadow: "0 4px 16px rgba(99,102,241,0.35)" }}>
@@ -181,7 +209,7 @@ function GeneratingStep({ config }) {
         AI is generating your test…
       </h2>
       <p className="text-xs mb-8" style={{ color: "#94A3B8" }}>
-        {config.difficulty} · {config.totalMarks} marks · {config.chapterName}
+        {config.difficulty} · {config.totalMarks} marks · {config.numQuestions} questions . {config.chapterName}
       </p>
       <div className="space-y-2.5 text-left">
         {steps.map((s, i) => (
@@ -346,6 +374,8 @@ function PreviewStep({ config, questions, rawResponse, onReset }) {
               style={{ background: "#EEF2FF", color: "#6366F1" }}>{config.difficulty}</span>
             <span className="text-xs" style={{ color: "#94A3B8" }}>·</span>
             <span className="text-xs font-medium" style={{ color: "#64748B" }}>{config.totalMarks} marks</span>
+            <span className="text-xs font-medium" style={{ color: "#64748B" }}> {config.numQuestions} questions</span>
+
             {config.qtype && (
               <><span className="text-xs" style={{ color: "#94A3B8" }}>·</span>
               <span className="text-xs font-medium" style={{ color: "#64748B" }}>{config.qtype}</span></>
@@ -389,22 +419,12 @@ function PreviewStep({ config, questions, rawResponse, onReset }) {
 
 /* ─── Main Page ───────────────────────────────────────────── */
 export default function AutoTestPage() {
+  const { user } = useAuth();
   const [step,        setStep]        = useState(0);
   const [config,      setConfig]      = useState(null);
   const [questions,   setQuestions]   = useState([]);
   const [rawResponse, setRawResponse] = useState(null);
   const [error,       setError]       = useState("");
-  const [chapters,    setChapters]    = useState([]);
-
-  useEffect(() => {
-    const token = getToken();
-    fetch(`${API}/api/v1/chapters`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then(r => r.json())
-      .then(d => { if (d?.chapters?.length) setChapters(d.chapters); })
-      .catch(() => {});
-  }, []);
 
   const handleGenerate = async (cfg) => {
     setConfig(cfg);
@@ -412,134 +432,99 @@ export default function AutoTestPage() {
     setStep(1);
 
     try {
-      const userEmail =
-        getUserEmail() ||
-        "sandipani.acharya@swais.edu";
+      const token = getToken();
 
-      const requestBody = {
-        topic: cfg.chapterName || "Selected Chapter",
-        difficulty: cfg.difficulty,
-        format_type: cfg.qtype || "MCQ",
-        num_questions: Math.max(
-          1,
-          Math.floor(cfg.totalMarks / 10)
-        ),
-        user_email: userEmail,
+      const payload = {
+        topic: cfg.chapterName || "",
+        difficulty: cfg.difficulty || "Medium",
+        format_type: cfg.qtype || "All",
+        num_questions: Number(cfg.numQuestions) || 20,
+        user_email: user?.email || "",
         client_name: "SSS",
       };
 
-      const response = await fetch(
+      console.log("Auto Test AI Payload:", payload);
+
+      const res = await fetch(
         `${AI_API}/api/faculty/generate-exam`,
         {
           method: "POST",
           headers: {
-            Accept: "application/json",
             "Content-Type": "application/json",
+            ...(token
+              ? { Authorization: `Bearer ${token}` }
+              : {}),
           },
-          body: JSON.stringify(requestBody),
+          body: JSON.stringify(payload),
         }
       );
 
-      const responseText = await response.text();
-
-      let data;
+      let data = null;
 
       try {
-        data = responseText
-          ? JSON.parse(responseText)
-          : {};
+        data = await res.json();
       } catch {
-        data = responseText;
+        throw new Error(
+          `Server returned an invalid response (HTTP ${res.status})`
+        );
       }
 
-      if (!response.ok) {
-        const detail =
-          typeof data?.detail === "string"
-            ? data.detail
-            : data?.detail
-              ? JSON.stringify(data.detail)
-              : typeof data === "string"
-                ? data
-                : `HTTP ${response.status}`;
-
-        throw new Error(detail);
+      if (!res.ok) {
+        throw new Error(
+          data?.detail ||
+          data?.message ||
+          `Error ${res.status}`
+        );
       }
 
-      const aiQuestions =
-        data?.question_paper?.questions ??
-        data?.questions ??
-        [];
+      /*
+        AI response can have different shapes.
+        Normalise it here.
+      */
 
-      const normalizedQuestions = Array.isArray(aiQuestions)
-        ? aiQuestions.map((question, index) => {
-            if (typeof question === "string") {
-              return {
-                question,
-                type:
-                  data?.question_paper?.format ||
-                  cfg.qtype ||
-                  "MCQ",
-                marks: null,
-              };
-            }
-
-            return {
-              question:
-                question?.question ??
-                question?.question_text ??
-                question?.text ??
-                `Question ${index + 1}`,
-
-              options:
-                question?.options ??
-                question?.choices ??
-                [],
-
-              answer:
-                question?.answer ??
-                question?.correct_answer ??
-                question?.correctAnswer ??
-                null,
-
-              marks:
-                question?.marks ??
-                question?.max_marks ??
-                question?.maxMarks ??
-                null,
-
-              type:
-                question?.type ??
-                question?.format_type ??
-                data?.question_paper?.format ??
-                cfg.qtype ??
-                "MCQ",
-            };
-          })
-        : [];
-
-      setQuestions(normalizedQuestions);
+      const qs =
+        Array.isArray(data)
+          ? data
+          : Array.isArray(data?.questions)
+          ? data.questions
+          : Array.isArray(data?.data)
+          ? data.data
+          : Array.isArray(data?.exam)
+          ? data.exam
+          : Array.isArray(data?.questionPaper)
+          ? data.questionPaper
+          : Array.isArray(data?.question_paper)
+          ? data.question_paper
+          : null;
 
       setRawResponse(
-        normalizedQuestions.length > 0
+        qs
           ? null
+          : typeof data === "string"
+          ? data
           : data
       );
 
+      setQuestions(qs || []);
+
       setStep(2);
-    } catch (error) {
+
+    } catch (err) {
       console.error(
-        "AUTO TEST GENERATION FAILED:",
-        error
+        "Auto test generation failed:",
+        err
       );
 
       setError(
-        error?.message ||
+        err.message ||
         "Failed to generate test. Please try again."
       );
 
       setStep(0);
+
     }
   };
+
   const handleReset = () => {
     setStep(0);
     setConfig(null);
@@ -561,7 +546,7 @@ export default function AutoTestPage() {
                   d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
             </div>
-            <h1 className="text-2xl font-bold" style={{ color: "#ffffff", fontFamily: "var(--font-space-grotesk)" }}>
+            <h1 className="text-2xl font-bold" style={{ color: "#0F172A", fontFamily: "var(--font-space-grotesk)" }}>
               Auto Test Generation
             </h1>
           </div>
@@ -603,7 +588,7 @@ export default function AutoTestPage() {
         </div>
       )}
 
-      {step === 0 && <ConfigStep chapters={chapters} onGenerate={handleGenerate} />}
+      {step === 0 && <ConfigStep onGenerate={handleGenerate} />}
       {step === 1 && <GeneratingStep config={config} />}
       {step === 2 && (
         <PreviewStep

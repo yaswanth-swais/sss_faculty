@@ -1,7 +1,7 @@
 """
 Assessment and AssessmentResult models.
 
-Keeps the SGS business-logic field names while mapping to the
+Keeps the SSS business-logic field names while mapping to the
 corresponding SSS database tables.
 """
 

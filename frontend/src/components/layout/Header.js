@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function Header({ onMenuToggle }) {
+  const { user } = useAuth();
+  const router = useRouter();
   const [notices, setNotices] = useState([]);
   const [showNotices, setShowNotices] = useState(false);
-  const { user } = useAuth();
 
   useEffect(() => {
     const token = localStorage.getItem("swais_faculty_token");
@@ -18,7 +20,6 @@ export default function Header({ onMenuToggle }) {
       .then(d => setNotices(d.notices || []))
       .catch(() => setNotices([]));
   }, []);
-
 
 
   return (
@@ -54,14 +55,14 @@ export default function Header({ onMenuToggle }) {
                 </span>
               </>
             )}
-            {(user?.total_students ?? user?.totalStudents) != null && (
+            {user?.totalStudents != null && (
               <>
                 <span style={{ color: "#CBD5E1" }}>·</span>
                 <span className="flex items-center gap-1 text-xs font-medium" style={{ color: "#64748B" }}>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13.5 7a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
-                  {user?.total_students ?? user?.totalStudents} Students
+                  {user.totalStudents} Students
                 </span>
               </>
             )}
@@ -135,14 +136,9 @@ export default function Header({ onMenuToggle }) {
             </div>
           </div>
 
-          {/* Logout */}
-          
         </div>
       </div>
 
-      {/* Logout confirmation modal — rendered via portal so the header's
-          backdrop-filter doesn't hijack the fixed positioning */}
-      
     </header>
   );
 }

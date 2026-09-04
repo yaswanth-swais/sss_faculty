@@ -9,7 +9,7 @@ from sqlalchemy import Column, Integer, Text
 from app.db.session import Base
 
 
-class SgsChapterContent(Base):
+class SssChapterContent(Base):
     __tablename__ = "sss_chapter_content"
 
     id = Column(

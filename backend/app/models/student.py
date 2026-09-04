@@ -1,5 +1,5 @@
 """
-StudentMaster — maps to sgs_student_master table.
+StudentMaster — maps to sss_student_master table.
 Students are linked to a teacher via class_id (teacher.class_id == student.class_id).
 """
 

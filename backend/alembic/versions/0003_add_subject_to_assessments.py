@@ -1,4 +1,4 @@
-"""Add subject column to sgs_assessments
+"""Add subject column to sss_assessments
 
 Revision ID: 0003
 Revises: 0002
@@ -16,10 +16,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.add_column(
-        "sgs_assessments",
+        "sss_assessments",
         sa.Column("subject", sa.String(150), nullable=True),
     )
 
 
 def downgrade() -> None:
-    op.drop_column("sgs_assessments", "subject")
+    op.drop_column("sss_assessments", "subject")

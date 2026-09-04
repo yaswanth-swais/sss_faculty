@@ -1,7 +1,7 @@
 """
 TeacherMaster — teacher profile data.
-Maps to sgs_teacher_master table.
-Linked to sgs_users_masters via email_id (no FK constraint).
+Maps to sss_teacher_master table.
+Linked to sss_users_masters via email_id (no FK constraint).
 """
 
 from sqlalchemy import Column, BigInteger, String, Boolean, DateTime

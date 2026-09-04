@@ -1,7 +1,7 @@
 """
 Teacher notes model.
 
-Maps SGS notes functionality to the normalized SSS teacher-notes table.
+Maps SSS notes functionality to the normalized SSS teacher-notes table.
 """
 
 import enum

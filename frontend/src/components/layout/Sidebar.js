@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { LOGIN_URL } from "@/lib/api";
 
 const navItems = [
   {
@@ -115,7 +116,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const handleLogout = async () => {
     setLoggingOut(true);
     await logout();
-    window.location.href = "https://staging.sss.swais.in";
+    window.location.href = LOGIN_URL;
   };
 
   return (
@@ -132,11 +133,13 @@ export default function Sidebar({ isOpen, onClose }) {
       >
         {/* Brand */}
         <div className="flex items-center gap-3 px-5 py-5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div className="w-10 h-10 rounded-xl ai-gradient flex items-center justify-center text-white font-bold text-lg shadow-lg pulse-glow shrink-0">
-            <img className="rounded-xl" src="https://www.image2url.com/r2/default/images/1780034724660-ae70f995-be5a-4e65-a6bd-4afb19e192d7.jpg"/>
-          </div>
+          <img
+            src={`${process.env.NODE_ENV === "production" ? "/faculty" : ""}/sss-logo.png`}
+            alt="SSS Senior Secondary School"
+            className="w-10 h-10 rounded-full object-cover shrink-0"
+          />
           <div className="flex-1 min-w-0">
-            <h1 className="text-[15px] font-bold leading-tight tracking-tight ai-gradient-text">SSS School</h1>
+            <h1 className="text-[15px] font-bold leading-tight tracking-tight ai-gradient-text">SSS Portal</h1>
             <p className="text-[10px] leading-tight mt-0.5" style={{ color: "#475569" }}>AI-Powered Faculty Portal</p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg lg:hidden cursor-pointer" style={{ color: "#475569" }} aria-label="Close sidebar">
@@ -192,197 +195,89 @@ export default function Sidebar({ isOpen, onClose }) {
         </nav>
 
         {/* Footer — AI badge */}
-        {/* Footer */}
-        <div
-          className="px-4 py-4 space-y-3"
-          style={{
-            borderTop: "1px solid rgba(255,255,255,0.06)",
-          }}
-        >
-          {/* AI Status */}
-          <div
-            className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl"
-            style={{
-              background: "rgba(99,102,241,0.1)",
-            }}
-          >
+        <div className="px-4 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: "rgba(99,102,241,0.1)" }}>
             <div className="w-7 h-7 rounded-lg ai-gradient flex items-center justify-center shrink-0">
-              <svg
-                className="w-3.5 h-3.5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
+              <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-
             <div>
-              <p
-                className="text-[11px] font-semibold"
-                style={{ color: "#A5B4FC" }}
-              >
-                AI Active
-              </p>
-
-              <p
-                className="text-[9px]"
-                style={{ color: "#475569" }}
-              >
-                Powered by SWAIS Intelligence
-              </p>
+              <p className="text-[11px] font-semibold" style={{ color: "#A5B4FC" }}>AI Active</p>
+              <p className="text-[9px]" style={{ color: "#475569" }}>Powered by SWAIS Intelligence</p>
             </div>
           </div>
 
-          {/* Logout */}
           <button
-            type="button"
             onClick={() => setShowLogoutConfirm(true)}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer"
-            style={{
-              color: "#F87171",
-              background: "rgba(239,68,68,0.08)",
-            }}
-            onMouseEnter={(event) => {
-              event.currentTarget.style.background =
-                "rgba(239,68,68,0.16)";
-              event.currentTarget.style.color = "#FCA5A5";
-            }}
-            onMouseLeave={(event) => {
-              event.currentTarget.style.background =
-                "rgba(239,68,68,0.08)";
-              event.currentTarget.style.color = "#F87171";
-            }}
+            className="w-full mt-3 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-200"
+            style={{ color: "#94A3B8" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.color = "#FCA5A5"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#94A3B8"; }}
           >
-            <svg
-              className="w-[18px] h-[18px] shrink-0"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.8}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
+            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-
-            <span>Logout</span>
+            <span>Sign out</span>
           </button>
         </div>
       </aside>
-      {showLogoutConfirm &&
-        createPortal(
+
+      {/* Logout confirmation — rendered via portal so the sidebar's transform
+          doesn't hijack the fixed positioning */}
+      {showLogoutConfirm && createPortal(
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+          style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
+          onClick={() => !loggingOut && setShowLogoutConfirm(false)}
+        >
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center px-4"
-            style={{
-              background: "rgba(15,23,42,0.55)",
-              backdropFilter: "blur(4px)",
-              WebkitBackdropFilter: "blur(4px)",
-            }}
-            onClick={() => {
-              if (!loggingOut) {
-                setShowLogoutConfirm(false);
-              }
-            }}
+            className="w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+            style={{ background: "#FFFFFF", border: "1px solid rgba(99,102,241,0.1)" }}
+            onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sidebar-logout-title"
           >
-            <div
-              className="w-full max-w-sm rounded-2xl p-6 shadow-2xl"
-              style={{
-                background: "#FFFFFF",
-                border:
-                  "1px solid rgba(99,102,241,0.1)",
-              }}
-              onClick={(event) =>
-                event.stopPropagation()
-              }
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="logout-confirm-title"
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: "#FEF2F2" }}
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="#EF4444"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                    />
-                  </svg>
-                </div>
-
-                <h2
-                  id="logout-confirm-title"
-                  className="text-base font-bold"
-                  style={{
-                    color: "#0F172A",
-                    fontFamily:
-                      "var(--font-space-grotesk)",
-                  }}
-                >
-                  Sign out?
-                </h2>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#FEF2F2" }}>
+                <svg className="w-5 h-5" fill="none" stroke="#EF4444" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
               </div>
-
-              <p
-                className="text-sm mb-5"
-                style={{ color: "#64748B" }}
-              >
-                You will be signed out of the faculty
-                portal.
-              </p>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowLogoutConfirm(false)
-                  }
-                  disabled={loggingOut}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all disabled:opacity-60"
-                  style={{
-                    color: "#64748B",
-                    background: "#F1F5F9",
-                  }}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={loggingOut}
-                  className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all disabled:cursor-not-allowed"
-                  style={{
-                    color: "#FFFFFF",
-                    background: "#EF4444",
-                    opacity: loggingOut ? 0.7 : 1,
-                  }}
-                >
-                  {loggingOut
-                    ? "Signing out..."
-                    : "Yes, Sign Out"}
-                </button>
-              </div>
+              <h2 id="sidebar-logout-title" className="text-base font-bold" style={{ color: "#0F172A", fontFamily: "var(--font-space-grotesk)" }}>
+                Sign out?
+              </h2>
             </div>
-          </div>,
-          document.body
-        )}
+            <p className="text-sm mb-5" style={{ color: "#64748B" }}>
+              You will be signed out and taken back to the SSS Portal login page.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                disabled={loggingOut}
+                className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all"
+                style={{ color: "#64748B", background: "#F1F5F9" }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#E2E8F0"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#F1F5F9"; }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer transition-all"
+                style={{ color: "#FFFFFF", background: "#EF4444", opacity: loggingOut ? 0.7 : 1 }}
+                onMouseEnter={e => { if (!loggingOut) e.currentTarget.style.background = "#DC2626"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#EF4444"; }}
+              >
+                {loggingOut ? "Signing out..." : "Yes, Sign Out"}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 }
